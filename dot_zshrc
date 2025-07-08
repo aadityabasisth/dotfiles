@@ -1,0 +1,388 @@
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load
+ZSH_THEME="robbyrussell"
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+plugins=(
+    git
+    web-search
+    zsh-syntax-highlighting
+    zsh-autosuggestions
+    colored-man-pages
+    command-not-found
+    extract
+    copypath
+    copyfile
+    dirhistory
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# Environment Variables
+export EDITOR="nvim"
+export VISUAL="nvim"
+export PAGER="less"
+export LESS="-R"
+export HISTSIZE=50000
+export SAVEHIST=50000
+export HISTFILE=~/.zsh_history
+
+# PATH optimization
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="/usr/local/bin:$PATH"
+
+# Clean default zshrc
+export MallocStackLogging=0
+export MallocStackLoggingNoCompact=1
+unset MallocStackLogging
+export MallocStackLogging=
+unset MALLOC_STACK_LOGGING 
+export MALLOC_STACK_LOGGING=
+unset MallocStackLogging
+
+# Disable malloc logging
+unset MallocStackLogging
+unset MallocStackLoggingNoCompact
+unset MallocScribble
+unset MallocPreScribble
+unset MallocGuardEdges
+unset MallocDoNotProtectPrelude
+unset MallocDoNotProtectPostlude
+unset MallocCheckHeapStart
+unset MallocCheckHeapEach
+
+# Disable malloc debugging and logging
+export MallocNanoZone=0
+export DYLD_INSERT_LIBRARIES=
+export MALLOC_PERMIT_INSANE_REQUESTS=1
+export MallocLogFile=/dev/null
+export MallocDebugFlags=0
+
+# Zoxide setup
+eval "$(zoxide init zsh)"
+alias cd=z
+
+# Wi-Fi password retrieval function
+function show() {
+    if [ "$1" != "pass" ]; then
+        echo "Usage: show pass <wifi-name>"
+        return 1
+    fi
+    if [ -z "$2" ]; then
+        echo "Usage: show pass <wifi-name>"
+        return 1
+    fi
+    local wifi_name="$2"
+    security find-generic-password -wa "$wifi_name" 2>/dev/null || echo "Wi-Fi network '$wifi_name' not found in keychain"
+}
+
+# Atuin shell history
+eval "$(atuin init zsh)"
+
+# Enhanced fzf setup
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --preview-window=right:60%'
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+
+# Custom fzf integration with Atuin
+function fzf-atuin-history-widget() {
+    local selected
+    selected=$(atuin search --cmd-only --limit 0 | fzf --height=50% --reverse --border --preview 'echo {}' --preview-window down:3:wrap)
+    if [[ -n $selected ]]; then
+        LBUFFER=$selected
+        RBUFFER=""
+        zle reset-prompt
+    fi
+}
+zle -N fzf-atuin-history-widget
+
+# Enhanced file finder
+function ff() {
+    local file
+    file=$(fd --type f --hidden --follow --exclude .git | fzf --preview 'bat --style=numbers --color=always --line-range :500 {}')
+    [ -n "$file" ] && $EDITOR "$file"
+}
+
+# Enhanced directory finder
+function fcd() {
+    local dir
+    dir=$(fd --type d --hidden --follow --exclude .git | fzf --preview 'eza --tree --level=2 {}')
+    [ -n "$dir" ] && cd "$dir"
+}
+
+# Ripgrep + fzf integration
+function rg_fzf() {
+    rg --color=always --line-number --no-heading --smart-case "${*:-}" |
+    fzf --ansi \
+        --color "hl:-1:underline,hl+:-1:underline:reverse" \
+        --delimiter : \
+        --preview 'bat --color=always {1} --highlight-line {2}' \
+        --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+        --bind 'enter:become($EDITOR {1} +{2})'
+}
+
+# Bind Ctrl+R to the custom fzf-atuin function (overrides default atuin binding)
+bindkey '^R' fzf-atuin-history-widget
+
+# Additional fzf keybindings
+bindkey '^T' fzf-file-widget
+bindkey '\ec' fzf-cd-widget
+
+# yt-dlp aliases
+alias ytdl='yt-dlp'
+alias ytdl-audio='yt-dlp -x --audio-format mp3 -o "~/Downloads/yt-dlp/audio/%(title)s.%(ext)s"'
+alias ytdl-720='yt-dlp -f "best[height<=720]"'
+alias ytdl-hq='yt-dlp -f "bestvideo+bestaudio/best"'
+alias ytdl-4k='yt-dlp -f "best[height<=2160]"'
+alias ytdl-playlist='yt-dlp -o "~/Downloads/yt-dlp/%(playlist)s/%(title)s.%(ext)s"'
+
+# .zshrc backup and version management
+function backup_zshrc() {
+    local message="${1:-Auto backup $(date)}"
+    cd ~/dotfiles
+    cp ~/.zshrc ./zshrc
+    git add zshrc
+    if git commit -m "$message"; then
+        echo "📝 Local commit created: $message"
+        if git push origin main; then
+            echo "✅ .zshrc backed up and pushed to GitHub!"
+        else
+            echo "⚠️  Local backup created but failed to push to GitHub"
+        fi
+    else
+        echo "ℹ️  No changes detected in .zshrc"
+    fi
+    cd - > /dev/null
+}
+
+function show_zshrc_versions() {
+    cd ~/dotfiles
+    echo "📝 .zshrc version history:"
+    git log --oneline --graph zshrc
+    cd - > /dev/null
+}
+
+function restore_zshrc() {
+    if [ -z "$1" ]; then
+        echo "Usage: restore_zshrc <commit-hash>"
+        echo "Use 'show_zshrc_versions' to see available versions"
+        return 1
+    fi
+    cd ~/dotfiles
+    git show "$1":zshrc > ~/.zshrc
+    echo "✅ .zshrc restored from commit $1"
+    echo "Run 'source ~/.zshrc' to apply changes"
+    cd - > /dev/null
+}
+
+alias zshrc-backup='backup_zshrc'
+alias zshrc-versions='show_zshrc_versions'
+alias zshrc-restore='restore_zshrc'
+
+# Enhanced ls aliases with modern tools
+alias ls='eza --icons'
+alias ll='eza -l --icons'
+alias la='eza -la --icons'
+alias lt='eza --tree --level=2 --icons'
+alias l='eza -l --icons'
+
+# File and directory operations
+alias mkdir='mkdir -p'  # Create parent directories as needed
+alias cp='cp -i'        # Interactive copy
+alias mv='mv -i'        # Interactive move
+alias rm='rm -i'        # Interactive remove
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Navigation shortcuts
+alias home='cd ~'
+alias desktop='cd ~/Desktop'
+alias downloads='cd ~/Downloads'
+alias documents='cd ~/Documents'
+alias projects='cd ~/Projects'  # Create this directory if you use it
+
+# File viewing and editing
+alias cat='bat'
+alias less='bat --paging=always'
+alias grep='rg'
+alias find='fd'
+alias du='dust'
+alias top='btop'
+alias htop='btop'
+
+# Network and system
+alias ping='ping -c 5'
+alias ports='lsof -i -P | grep LISTEN'
+alias myip='curl -s https://ipinfo.io/ip'
+alias speedtest='curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -'
+
+# Git shortcuts
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+alias gpl='git pull'
+
+# Clipboard operations (macOS)
+alias pbcopy='pbcopy'
+alias pbpaste='pbpaste'
+alias copy='pbcopy'
+alias paste='pbpaste'
+
+# System maintenance
+alias cleanup='sudo find /var/log -name "*.log" -type f -mtime +30 -delete'
+alias diskusage='df -h'
+alias meminfo='top -l 1 -s 0 | grep PhysMem'
+
+# Development shortcuts
+alias py='python3'
+alias pip='pip3'
+alias serve='python3 -m http.server'
+alias jsonformat='python3 -m json.tool'
+
+# Docker shortcuts (if you use Docker)
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps'
+alias di='docker images'
+
+# Quick edits
+alias zshconfig='nvim ~/.zshrc'
+alias vimconfig='nvim ~/.config/nvim/init.vim'
+alias gitconfig='nvim ~/.gitconfig'
+
+# Process management
+alias psg='ps aux | grep'
+alias killall='killall'
+
+# Utility functions
+function mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+function extract() {
+    if [ -f $1 ] ; then
+        case $1 in
+            *.tar.bz2)   tar xjf $1     ;;
+            *.tar.gz)    tar xzf $1     ;;
+            *.bz2)       bunzip2 $1     ;;
+            *.rar)       unrar e $1     ;;
+            *.gz)        gunzip $1      ;;
+            *.tar)       tar xf $1      ;;
+            *.tbz2)      tar xjf $1     ;;
+            *.tgz)       tar xzf $1     ;;
+            *.zip)       unzip $1       ;;
+            *.Z)         uncompress $1  ;;
+            *.7z)        7z x $1        ;;
+            *)     echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+function weather() {
+    curl "wttr.in/${1:-}"
+}
+
+function qr() {
+    echo "$1" | curl -F-=\<- qrenco.de
+}
+
+function backup_file() {
+    cp "$1" "$1.bak.$(date +%Y%m%d_%H%M%S)"
+}
+
+function search_history() {
+    history | grep "$1"
+}
+
+function ports_used() {
+    lsof -i :"$1"
+}
+
+# System maintenance and automation
+alias maintain='~/dotfiles/scripts/system_maintenance.sh'
+alias setup-dotfiles='~/dotfiles/setup.sh'
+alias update-tools='brew update && brew upgrade && npm update -g'
+alias clean-system='sudo find /var/log -name "*.log" -type f -mtime +30 -delete && brew cleanup'
+
+# Directory bookmarks
+function bookmark() {
+    echo "$PWD" >> ~/.bookmarks
+    echo "Bookmarked: $PWD"
+}
+
+function bookmarks() {
+    if [ -f ~/.bookmarks ]; then
+        cat -n ~/.bookmarks
+    else
+        echo "No bookmarks found"
+    fi
+}
+
+function goto() {
+    if [ -f ~/.bookmarks ]; then
+        local selection
+        selection=$(cat ~/.bookmarks | fzf --preview 'ls -la {}')
+        [ -n "$selection" ] && cd "$selection"
+    else
+        echo "No bookmarks found"
+    fi
+}
+
+# Document conversion and image processing
+alias md2pdf='pandoc --pdf-engine=xelatex -o'
+alias md2html='pandoc -s --css=style.css -o'
+alias md2docx='pandoc -o'
+alias doc2md='pandoc --to markdown -o'
+alias pdf2txt='pandoc -t plain -o'
+
+# ImageMagick shortcuts
+alias convert='magick convert'
+alias identify='magick identify'
+alias montage='magick montage'
+alias resize='magick convert -resize'
+alias crop='magick convert -crop'
+alias rotate='magick convert -rotate'
+alias quality='magick convert -quality'
+
+# Quick image operations
+alias img-info='magick identify -verbose'
+alias img-resize='magick convert -resize 50%'
+alias img-jpg='magick convert -format jpg'
+alias img-png='magick convert -format png'
+alias img-webp='magick convert -format webp'
+
+# Pandoc utility functions
+function pdf-convert() {
+    if [ $# -lt 2 ]; then
+        echo "Usage: pdf-convert input.md output.pdf"
+        return 1
+    fi
+    pandoc "$1" -o "$2" --pdf-engine=xelatex
+}
+
+function batch-resize() {
+    if [ $# -lt 2 ]; then
+        echo "Usage: batch-resize <size> <directory>"
+        echo "Example: batch-resize 800x600 ./images/"
+        return 1
+    fi
+    local size="$1"
+    local dir="$2"
+    for img in "$dir"*.{jpg,jpeg,png,gif}; do
+        [ -f "$img" ] && magick convert "$img" -resize "$size" "${img%.*}_resized.${img##*.}"
+    done
+}
