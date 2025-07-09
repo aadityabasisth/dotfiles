@@ -1,0 +1,135 @@
+# ================================================
+# ALIASES CONFIGURATION
+# ================================================
+
+# Navigation & Directory Operations
+alias cd=z
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias home='cd ~'
+alias desktop='cd ~/Desktop'
+alias downloads='cd ~/Downloads'
+alias documents='cd ~/Documents'
+alias projects='cd ~/Projects'
+
+# File Listing & Viewing
+alias ls='eza --icons'
+alias ll='eza -l --icons'
+alias la='eza -la --icons'
+alias lt='eza --tree --level=2 --icons'
+alias l='eza -l --icons'
+alias cat='bat'
+alias less='bat --paging=always'
+
+# File Operations
+alias mkdir='mkdir -p'
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='rm -i'
+alias grep='rg'
+alias find='fd'
+alias du='dust'
+alias top='btop'
+alias htop='btop'
+
+# YouTube Download (yt-dlp)
+alias ytdl='yt-dlp'
+alias ytdl-audio='yt-dlp -x --audio-format mp3 -o "~/Downloads/yt-dlp/audio/%(title)s.%(ext)s"'
+alias ytdl-720='yt-dlp -f "best[height<=720]"'
+alias ytdl-hq='yt-dlp -f "bestvideo+bestaudio/best"'
+alias ytdl-4k='yt-dlp -f "best[height<=2160]"'
+alias ytdl-playlist='yt-dlp -o "~/Downloads/yt-dlp/%(playlist)s/%(title)s.%(ext)s"'
+
+# Zshrc Management
+alias zshrc-backup='backup_zshrc'
+alias zshrc-versions='show_zshrc_versions'
+alias zshrc-restore='restore_zshrc'
+
+# Network & System
+alias ping='ping -c 5'
+alias ports='lsof -i -P | grep LISTEN'
+alias myip='curl -s https://ipinfo.io/ip'
+alias speedtest='curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -'
+alias diskusage='df -h'
+alias meminfo='top -l 1 -s 0 | grep PhysMem'
+
+# Git Shortcuts
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+alias gpl='git pull'
+
+# Clipboard (macOS)
+alias pbcopy='pbcopy'
+alias pbpaste='pbpaste'
+alias copy='pbcopy'
+alias paste='pbpaste'
+
+# Development
+alias py='python3'
+alias pip='pip3'
+alias serve='python3 -m http.server'
+alias jsonformat='python3 -m json.tool'
+
+# Docker
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps'
+alias di='docker images'
+
+# Configuration Files
+alias zshconfig='nvim ~/.zshrc'
+alias aliasconfig='nvim ~/.aliases'
+alias vimconfig='nvim ~/.config/nvim/init.vim'
+alias gitconfig='nvim ~/.gitconfig'
+
+# Process Management
+alias psg='ps aux | grep'
+alias killall='killall'
+
+# System Maintenance
+alias cleanup='sudo find /var/log -name "*.log" -type f -mtime +30 -delete'
+alias maintain='~/dotfiles/scripts/system_maintenance.sh'
+alias setup-dotfiles='~/dotfiles/setup.sh'
+alias update-tools='brew update && brew upgrade && npm update -g'
+alias clean-system='sudo find /var/log -name "*.log" -type f -mtime +30 -delete && brew cleanup'
+
+# Document Conversion
+alias md2pdf='pandoc --pdf-engine=xelatex -o'
+alias md2html='pandoc -s --css=style.css -o'
+alias md2docx='pandoc -o'
+alias doc2md='pandoc --to markdown -o'
+alias pdf2txt='pandoc -t plain -o'
+
+# ImageMagick
+alias convert='magick convert'
+alias identify='magick identify'
+alias montage='magick montage'
+alias resize='magick convert -resize'
+alias crop='magick convert -crop'
+alias rotate='magick convert -rotate'
+alias quality='magick convert -quality'
+
+# Image Processing
+alias img-info='magick identify -verbose'
+alias img-resize='magick convert -resize 50%'
+alias img-jpg='magick convert -format jpg'
+alias img-png='magick convert -format png'
+alias img-webp='magick convert -format webp'
+
+# Chezmoi shortcuts
+alias cm='chezmoi'
+alias cma='chezmoi add'
+alias cme='chezmoi edit'
+alias cmapply='chezmoi apply'
+alias cmstatus='chezmoi status'
+alias cmdiff='chezmoi diff'
+alias cmupdate='chezmoi update'
+
